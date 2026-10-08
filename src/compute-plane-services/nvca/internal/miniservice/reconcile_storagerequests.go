@@ -87,7 +87,7 @@ func (r *Reconciler) doStorageRequests(ctx context.Context,
 		}
 		switch st.Status.Phase {
 		case nvcav2beta1.StorageFailed, nvcav2beta1.StorageRuntimeError:
-			lerr := fmt.Errorf("storage request %s has failed", st.Spec.Type)
+			lerr := fmt.Errorf("storage request %s has failed: %s", st.Spec.Type, nvcastorage.GetStorageRequestErrorLog(&st))
 			switch st.Spec.Type {
 			case nvcav2beta1.ModelCacheRequest:
 				durable, err := persistedDurableHelmCacheSelection(icmsReq)

@@ -207,8 +207,7 @@ func (r *Reconciler) doSharedStorageSMB(ctx context.Context,
 				log.Error(err, "failed to create shared-storage object", "name", obj.GetName())
 				// If the error is forbidden, fail
 				if k8serrors.IsForbidden(err) || k8serrors.IsInvalid(err) {
-					rerr = fmt.Errorf("failed to create shared-storage object %s: %w", obj.GetName(), err)
-					stCopy.Status.Phase = nvcav1new.StorageFailed
+					rerr = failSharedStorageObjectCreate(stCopy, obj, err)
 					goto done
 				}
 				// Otherwise, requeue and retry
@@ -288,8 +287,7 @@ func (r *Reconciler) doSharedStorageSMB(ctx context.Context,
 				log.Error(err, "failed to create shared-storage object", "name", obj.GetName())
 				// If the error is forbidden, fail
 				if k8serrors.IsForbidden(err) || k8serrors.IsInvalid(err) {
-					rerr = fmt.Errorf("failed to create shared-storage object %s: %w", obj.GetName(), err)
-					stCopy.Status.Phase = nvcav1new.StorageFailed
+					rerr = failSharedStorageObjectCreate(stCopy, obj, err)
 					goto done
 				}
 				// Otherwise, requeue and retry
@@ -402,6 +400,21 @@ done:
 	}
 
 	return reconcile.Result{}, rerr
+}
+
+// failSharedStorageObjectCreate marks the request failed after the API server
+// permanently rejected a shared-storage object, and records the rejection on a
+// condition so it can be surfaced without access to the agent logs.
+func failSharedStorageObjectCreate(stCopy *nvcav1new.StorageRequest, obj client.Object, err error) error {
+	rerr := fmt.Errorf("failed to create shared-storage object %s: %w", obj.GetName(), err)
+	meta.SetStatusCondition(&stCopy.Status.Conditions, metav1.Condition{
+		Type:    ConditionTypeSharedStorageResourcesCreated,
+		Status:  metav1.ConditionFalse,
+		Reason:  ConditionReasonAdmissionRejected,
+		Message: rerr.Error(),
+	})
+	stCopy.Status.Phase = nvcav1new.StorageFailed
+	return reconcile.TerminalError(rerr)
 }
 
 type storageCreatingPhaseOp struct {

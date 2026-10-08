@@ -229,6 +229,10 @@ func GetStorageRequestErrorLog(st *nvcav2beta1.StorageRequest) string {
 					"Please contact your cluster administrator to install the driver.",
 					SMBCSIDriverName, featureflag.HelmSharedStorage.Key)
 			}
+			if condition.Type == ConditionTypeSharedStorageResourcesCreated &&
+				condition.Status == metav1.ConditionFalse && condition.Message != "" {
+				return condition.Message
+			}
 		}
 		return fmt.Sprintf("storage request %s is in %s phase", st.Name, st.Status.Phase)
 	}

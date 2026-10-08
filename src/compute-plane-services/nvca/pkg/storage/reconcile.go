@@ -62,12 +62,14 @@ var (
 )
 
 const (
-	defaultRequeueDelay                       = 100 * time.Millisecond
-	deletingStorageRequestRequeueDelay        = 5 * time.Second
-	ConditionTypeSMBCSIDriverInstalled        = "SMBCSIDriverInstalled"
-	ConditionTypeCleanupSuccessful            = "CleanupSuccessful"
-	ConditionReasonSomeObjectsPendingDeletion = "SomeObjectsPendingDeletion"
-	ConditionReasonAllObjectsDeleted          = "AllObjectsDeleted"
+	defaultRequeueDelay                        = 100 * time.Millisecond
+	deletingStorageRequestRequeueDelay         = 5 * time.Second
+	ConditionTypeSMBCSIDriverInstalled         = "SMBCSIDriverInstalled"
+	ConditionTypeSharedStorageResourcesCreated = "SharedStorageResourcesCreated"
+	ConditionReasonAdmissionRejected           = "AdmissionRejected"
+	ConditionTypeCleanupSuccessful             = "CleanupSuccessful"
+	ConditionReasonSomeObjectsPendingDeletion  = "SomeObjectsPendingDeletion"
+	ConditionReasonAllObjectsDeleted           = "AllObjectsDeleted"
 
 	// DefaultModelCacheStorageClassName is the storage class whose provisioner
 	// decides which mount option defaults model cache volumes need.
@@ -941,7 +943,7 @@ func (r *Reconciler) applyControlledOne(ctx context.Context,
 
 	op, err := controllerutil.CreateOrUpdate(ctx, r.Client, obj, func() error { return nil })
 	if err != nil {
-		return controllerutil.OperationResultNone, fmt.Errorf("create or update %s %s: %v",
+		return controllerutil.OperationResultNone, fmt.Errorf("create or update %s %s: %w",
 			obj.GetObjectKind().GroupVersionKind(), client.ObjectKeyFromObject(obj), err)
 	}
 	return op, nil
